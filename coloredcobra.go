@@ -6,7 +6,7 @@
 //
 // 1. Insert in cmd/root.go file of your project :
 //
-//    import cc "github.com/ivanpirog/coloredcobra"
+//    import cc "github.com/crinklywrappr/coloredcobra"
 //
 //
 // 2. Put the following code to the beginning of the Execute() function:
@@ -25,7 +25,7 @@
 //
 // Copyright © 2022 Ivan Pirog <ivan.pirog@gmail.com>.
 // Released under the MIT license.
-// Project home: https://github.com/ivanpirog/coloredcobra
+// Project home: https://github.com/crinklywrappr/coloredcobra
 //
 package coloredcobra
 

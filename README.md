@@ -21,7 +21,7 @@ It's very easy to add `ColoredCobra` to your project!
 Open terminal and execute:
 
 ```bash
-go get -u github.com/ivanpirog/coloredcobra
+go get -u github.com/crinklywrappr/coloredcobra
 ```
 
 ## Quick start
@@ -29,7 +29,7 @@ go get -u github.com/ivanpirog/coloredcobra
 Open your `cmd/root.go` and insert this code:
 
 ```go
-import cc "github.com/ivanpirog/coloredcobra"
+import cc "github.com/crinklywrappr/coloredcobra"
 ```
 
 Or:
@@ -37,7 +37,7 @@ Or:
 ```go
 import (
     ...
-    cc "github.com/ivanpirog/coloredcobra"
+    cc "github.com/crinklywrappr/coloredcobra"
 )
 ```
 
@@ -137,4 +137,4 @@ Underline
 
 ## License
 
-ColoredCobra is released under the MIT license. See [LICENSE](https://github.com/ivanpirog/coloredcobra/blob/main/LICENSE).
+ColoredCobra is released under the MIT license. See [LICENSE](https://github.com/crinklywrappr/coloredcobra/blob/main/LICENSE).
