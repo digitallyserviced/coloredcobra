@@ -34,6 +34,9 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	cu "github.com/gookit/color"
+	"golang.org/x/term"
+
 	"github.com/spf13/cobra"
 )
 
@@ -91,9 +94,29 @@ const (
 	Underline = 64
 )
 
+var termWidth int16 = 80
+
+func init() {
+	w, h, err := term.GetSize(0)
+	if err == nil {
+		termWidth = int16(w)
+	}
+	_, _, _ = w, h, err
+}
+
 // Init patches Cobra's usage template with configuration provided.
 func Init(cfg *Config) {
 
+	// dump.P(os.Environ())
+	// cols, ok := os.LookupEnv("COLUMNS")
+	// if !ok {
+	// 	fmt.Println("not ok")
+	// }
+	// fmt.Println(cols)
+	// i, err := strconv.ParseInt(cols, 10, 16)
+	// if err == nil {
+	// 	termWidth = int16(i)
+	// }
 	if cfg.RootCmd == nil {
 		panic("coloredcobra: Root command pointer is missing.")
 	}
@@ -106,13 +129,13 @@ func Init(cfg *Config) {
 	//
 	if cfg.NoExtraNewlines == false {
 		tpl = strings.NewReplacer(
-			"Usage:", "\nUsage:\n",
-			"Aliases:", "\nAliases:\n",
-			"Examples:", "\nExamples:\n",
-			"Available Commands:", "\nAvailable Commands:\n",
-			"Global Flags:", "\nGlobal Flags:\n",
-			"Additional help topics:", "\nAdditional help topics:\n",
-			"Use \"", "\nUse \"",
+			"Usage:", "Usage:\n",
+			"Aliases:", "Aliases:\n",
+			"Examples:", "Examples:\n",
+			"Available Commands:", "Available Commands:\n",
+			"Flags:", "Flags:",
+			"Additional help topics:", "Additional help topics:\n",
+			"Use \"", "Use \"",
 		).Replace(tpl)
 		re := regexp.MustCompile(`(?m)^Flags:$`)
 		tpl = re.ReplaceAllString(tpl, "\nFlags:\n")
@@ -240,7 +263,13 @@ func Init(cfg *Config) {
 
 				// Styling the flag description
 				if cfd != nil {
-					lines[k] = strings.Replace(lines[k], spl[2], cfd.Sprint(spl[2]), 1)
+					sidx := strings.Index(cu.ClearCode(lines[k]), cu.ClearCode(spl[2]))
+					if sidx > 0 {
+						wrapTxt := wrap(sidx, int(termWidth), spl[2])
+						lines[k] = strings.Replace(lines[k], spl[2], cfd.Sprint(wrapTxt), 1)
+					} else {
+						lines[k] = strings.Replace(lines[k], spl[2], cfd.Sprint(spl[2]), 1)
+					}
 				}
 
 				// Styling flag data type
@@ -347,4 +376,73 @@ func getColor(param uint8) (c *color.Color) {
 	}
 
 	return
+}
+
+// Splits the string `s` on whitespace into an initial substring up to
+// `i` runes in length and the remainder. Will go `slop` over `i` if
+// that encompasses the entire string (which allows the caller to
+// avoid short orphan words on the final line).
+func wrapN(i, slop int, s string) (string, string) {
+	if i+slop > len(s) {
+		return s, ""
+	}
+
+	w := strings.LastIndexAny(s[:i], " \t\n")
+	if w <= 0 {
+		return s, ""
+	}
+	nlPos := strings.LastIndex(s[:i], "\n")
+	if nlPos > 0 && nlPos < w {
+		return s[:nlPos], s[nlPos+1:]
+	}
+	return s[:w], s[w+1:]
+}
+
+// Wraps the string `s` to a maximum width `w` with leading indent
+// `i`. The first line is not indented (this is assumed to be done by
+// caller). Pass `w` == 0 to do no wrapping
+func wrap(i, w int, s string) string {
+	if w == 0 {
+		return strings.Replace(s, "\n", "\n"+strings.Repeat(" ", i), -1)
+	}
+
+	// space between indent i and end of line width w into which
+	// we should wrap the text.
+	wrap := w - i
+
+	var r, l string
+
+	// Not enough space for sensible wrapping. Wrap as a block on
+	// the next line instead.
+	if wrap < 24 {
+		i = 16
+		wrap = w - i
+		r += "\n" + strings.Repeat(" ", i)
+	}
+	// If still not enough space then don't even try to wrap.
+	if wrap < 24 {
+		return strings.Replace(s, "\n", r, -1)
+	}
+
+	// Try to avoid short orphan words on the final line, by
+	// allowing wrapN to go a bit over if that would fit in the
+	// remainder of the line.
+	slop := 5
+	wrap = wrap - slop
+
+	// Handle first line, which is indented by the caller (or the
+	// special case above)
+	l, s = wrapN(wrap, slop, s)
+	r = r + strings.Replace(l, "\n", "\n"+strings.Repeat(" ", i), -1)
+
+	// Now wrap the rest
+	for s != "" {
+		var t string
+
+		t, s = wrapN(wrap, slop, s)
+		r = r + "\n" + strings.Repeat(" ", i) + strings.Replace(t, "\n", "\n"+strings.Repeat(" ", i), -1)
+	}
+
+	return r
+
 }
