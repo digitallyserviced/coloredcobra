@@ -1,4 +1,4 @@
-module github.com/crinklywrappr/coloredcobra
+module github.com/digitallyserviced/coloredcobra
 
 go 1.18
 
